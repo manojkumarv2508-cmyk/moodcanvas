@@ -1,0 +1,231 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MoodCanvas — Infinite Image Board</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════════════
+       CANVAS BACKGROUND
+  ═══════════════════════════════════════════════ -->
+  <main class="canvas-area" id="canvas-area">
+    <!-- The infinite canvas viewport (transform applied by JS) -->
+    <div class="canvas-viewport" id="canvas-viewport"></div>
+
+    <!-- File drop overlay -->
+    <div class="drop-overlay" id="drop-overlay">
+      <div class="drop-inner">
+        <div class="drop-big-icon">🖼️</div>
+        <div class="drop-text">Drop images or videos onto your board</div>
+      </div>
+    </div>
+
+    <!-- Lasso region selection overlay -->
+    <div class="lasso-overlay hidden" id="lasso-overlay">
+      <div class="export-msg" id="lasso-msg">
+        <span>🖱️ Draw a box to group images</span>
+        <button class="btn btn-sm btn-ghost" id="btn-lasso-cancel">Cancel</button>
+      </div>
+      <div class="export-selection" id="lasso-selection"></div>
+    </div>
+
+    <!-- Export region selection overlay -->
+    <div class="export-overlay hidden" id="export-overlay">
+      <div class="export-msg" id="export-msg">
+        <span>🖱️ Click &amp; drag to select export region</span>
+        <span class="export-size-hint"></span>
+        <button class="btn btn-sm btn-ghost" id="btn-export-cancel">Cancel</button>
+      </div>
+      <div class="export-selection" id="export-selection"></div>
+    </div>
+  </main>
+
+  <!-- ═══════════════════════════════════════════════
+       FLOATING UI LAYER
+  ═══════════════════════════════════════════════ -->
+  <div class="ui-layer">
+
+    <!-- TOP LEFT: Branding & File Actions -->
+    <div class="floating-panel panel-tl">
+      <div class="logo">
+        <span class="logo-mark">🎨</span>
+        <span class="logo-text">MoodCanvas</span>
+      </div>
+      <div class="tdiv"></div>
+      <button class="btn btn-ghost btn-sm" id="btn-new" title="New board">New</button>
+      <button class="btn btn-ghost btn-sm" id="btn-save" title="Save board (Ctrl+S)">💾 Save</button>
+      <button class="btn btn-ghost btn-sm" id="btn-load" title="Load board">📂 Load</button>
+    </div>
+
+    <!-- TOP CENTER: Search -->
+    <div class="floating-panel panel-tc">
+      <div class="search-box">
+        <span class="search-ico">🔍</span>
+        <input type="text" id="search-input" placeholder="Search by name or tag…" autocomplete="off">
+      </div>
+    </div>
+
+    <!-- TOP RIGHT: Export -->
+    <div class="floating-panel panel-tr">
+      <button class="btn btn-export btn-sm" id="btn-export" title="Export a region as PNG">📸 Export PNG</button>
+    </div>
+
+    <!-- LEFT: Tools & Sidebar -->
+    <div class="floating-panel panel-left sidebar">
+      
+      <!-- Primary Tools -->
+      <div class="sidebar-top">
+        <div class="tool-buttons">
+          <button class="btn-tool" id="btn-add-image">
+            <span class="tool-icon">🖼️</span>
+            <span>Add Media</span>
+          </button>
+          <button class="btn-tool" id="btn-connect" title="Link two cards with a line (Esc to exit)">
+            <span class="tool-icon">🔗</span>
+            <span>Connect</span>
+          </button>
+          <button class="btn-tool" id="btn-add-note">
+            <span class="tool-icon">📝</span>
+            <span>Sticky Note</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Series section -->
+      <div class="sb-section">
+        <div class="sb-section-head">
+          <span>Series</span>
+          <button class="btn btn-icon-sm" id="btn-add-series" title="Create new series">+</button>
+        </div>
+        <button class="series-all-btn" id="series-all-btn">
+          <span class="series-all-dot"></span>
+          <span>All Images</span>
+        </button>
+        <div class="series-list-scroll">
+          <ul class="series-list" id="series-list"></ul>
+        </div>
+      </div>
+
+      <!-- Tags section -->
+      <div class="sb-section">
+        <div class="sb-section-head"><span>Tags</span></div>
+        <div class="tags-cloud" id="tags-cloud">
+          <span class="no-tags">No tags yet.</span>
+        </div>
+      </div>
+
+      <!-- Footer stats -->
+      <div class="sidebar-footer">
+        <span id="stat-images">0 images</span>
+        <span>·</span>
+        <span id="stat-series">0 series</span>
+      </div>
+    </div>
+
+    <!-- BOTTOM RIGHT: Zoom & Minimap -->
+    <div class="panel-br">
+      <div class="floating-panel zoom-panel">
+        <button class="btn btn-icon-sm" id="btn-zoom-out" title="Zoom out">−</button>
+        <span class="zoom-label" id="zoom-level" title="Click to reset zoom">100%</span>
+        <button class="btn btn-icon-sm" id="btn-zoom-in" title="Zoom in">+</button>
+        <div class="tdiv-sm"></div>
+        <button class="btn btn-ghost btn-sm" id="btn-zoom-fit" title="Fit all to screen">Fit</button>
+      </div>
+
+      <div class="floating-panel minimap-wrap" title="Click or drag to navigate">
+        <div class="minimap-title">Overview</div>
+        <canvas id="minimap-canvas"></canvas>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+       CONTEXT MENU
+  ═══════════════════════════════════════════════ -->
+  <div class="context-menu hidden" id="context-menu"></div>
+
+  <!-- ═══════════════════════════════════════════════
+       MODAL: CREATE SERIES
+  ═══════════════════════════════════════════════ -->
+  <div class="modal-backdrop hidden" id="modal-series">
+    <div class="modal">
+      <div class="modal-head">
+        <h3>Create Series</h3>
+        <button class="btn btn-icon modal-x" data-close-modal>✕</button>
+      </div>
+      <div class="modal-body">
+        <label class="field-label">Series Name</label>
+        <input type="text" id="series-name-input" class="field-input" placeholder="e.g. Cat Series">
+        <label class="field-label" style="margin-top:14px">Color</label>
+        <div class="color-picker-grid" id="color-picker-grid"></div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-ghost" data-close-modal>Cancel</button>
+        <button class="btn btn-primary" id="btn-series-create">Create Series</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+       MODAL: IMAGE DETAILS
+  ═══════════════════════════════════════════════ -->
+  <div class="modal-backdrop hidden" id="modal-image-details">
+    <div class="modal modal-wide">
+      <div class="modal-head">
+        <h3>Image Details</h3>
+        <button class="btn btn-icon modal-x" data-close-modal>✕</button>
+      </div>
+      <div class="modal-body modal-body-flex">
+        <!-- Thumbnail preview -->
+        <div class="image-preview" id="image-details-preview"></div>
+        <!-- Fields -->
+        <div class="modal-fields">
+          <label class="field-label">Name</label>
+          <input type="text" id="image-name-input" class="field-input" placeholder="Image name">
+
+          <label class="field-label">Tags <span class="field-hint">(comma separated)</span></label>
+          <input type="text" id="image-tags-input" class="field-input" placeholder="cute, reference, pose">
+
+          <label class="field-label">Series</label>
+          <select id="image-series-select" class="field-input field-select">
+            <option value="">— None —</option>
+          </select>
+
+          <label class="field-label">Note <span class="field-hint">(private reminder)</span></label>
+          <textarea id="image-note-input" class="field-input field-textarea" placeholder="e.g. Use this pose for frame 3…"></textarea>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-ghost" data-close-modal>Cancel</button>
+        <button class="btn btn-primary" id="btn-image-save">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+       HIDDEN FILE INPUTS
+  ═══════════════════════════════════════════════ -->
+  <input type="file" id="file-input" multiple accept="image/*,video/*" style="display:none">
+  <input type="file" id="load-input" accept=".moodcanvas,.json" style="display:none">
+
+  <!-- ═══════════════════════════════════════════════
+       SCRIPTS (order matters)
+  ═══════════════════════════════════════════════ -->
+  <script src="js/utils.js"></script>
+  <script src="js/board.js"></script>
+  <script src="js/canvas.js"></script>
+  <script src="js/sidebar.js"></script>
+  <script src="js/minimap.js"></script>
+  <script src="js/export.js"></script>
+  <script src="js/lasso.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/app.js"></script>
+
+</body>
+</html>
