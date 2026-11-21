@@ -111,4 +111,84 @@ document.addEventListener('DOMContentLoaded', () => {
     'color:#6C5CE7;font-size:18px;font-weight:bold',
     'color:inherit;font-size:12px'
   );
+
+  // ─── Demo Showcase Loader (e.g. ?demo=1) ──────────────────────────────────
+  if (window.location.search.includes('demo')) {
+    const s1 = Board.addSeries('Architectural Form', '#6C5CE7');
+    const s2 = Board.addSeries('Design Systems & UI', '#00CEC9');
+
+    const img1 = Board.addImage({
+      name: 'Monolithic Structure',
+      src: 'assets/demo/arch-minimalism.jpg',
+      x: 80, y: 80, width: 280, height: 210,
+      seriesId: s1.id,
+      tags: ['architecture', 'concrete', 'monochrome']
+    });
+
+    const img2 = Board.addImage({
+      name: 'Brutalist Framework',
+      src: 'assets/demo/techno-brutalism.jpg',
+      x: 420, y: 60, width: 300, height: 225,
+      seriesId: s1.id,
+      tags: ['brutalist', 'structure', 'geometry']
+    });
+
+    const img3 = Board.addImage({
+      name: 'Industrial Device',
+      src: 'assets/demo/industrial-design.png',
+      x: 780, y: 80, width: 280, height: 210,
+      tags: ['hardware', 'industrial', 'form']
+    });
+
+    const img4 = Board.addImage({
+      name: 'Interface Design System',
+      src: 'assets/demo/ui-concept.jpg',
+      x: 80, y: 350, width: 300, height: 220,
+      seriesId: s2.id,
+      tags: ['ui-ux', 'wireframe', 'layout']
+    });
+
+    const img5 = Board.addImage({
+      name: 'Typography Hierarchy',
+      src: 'assets/demo/typography-spec.svg',
+      x: 440, y: 350, width: 280, height: 210,
+      seriesId: s2.id,
+      tags: ['typography', 'inter', 'scale']
+    });
+
+    const img6 = Board.addImage({
+      name: 'Chromatic Harmony',
+      src: 'assets/demo/color-palette.svg',
+      x: 780, y: 350, width: 280, height: 210,
+      tags: ['palette', 'cyber', 'branding']
+    });
+
+    const n1 = Board.addNote({
+      text: '💡 Concept Note:\nMinimal off-white canvas with hairline borders, spatial hierarchy, and rapid tag indexing.',
+      x: 1120, y: 100, width: 240, height: 160, colorIndex: 0
+    });
+
+    const n2 = Board.addNote({
+      text: '⚡ Integration Verified:\nCross-tab drop ingestion from web tabs and AI image generators working smoothly.',
+      x: 1120, y: 330, width: 240, height: 150, colorIndex: 2
+    });
+
+    if (img1 && img2) Board.addConnection(img1.id, img2.id);
+    if (img2 && img3) Board.addConnection(img2.id, img3.id);
+    if (img4 && img5) Board.addConnection(img4.id, img5.id);
+    if (img5 && img6) Board.addConnection(img5.id, img6.id);
+    if (img3 && n1) Board.addConnection(img3.id, n1.id);
+
+    if (window.location.search.includes('search')) {
+      const sInput = document.getElementById('search-input');
+      sInput.value = 'brutalist';
+      setTimeout(() => Canvas.setSearchIds(Board.search('brutalist')), 200);
+    }
+
+    if (window.location.search.includes('connect')) {
+      setTimeout(() => Canvas.setConnectMode(true), 200);
+    }
+
+    setTimeout(() => Canvas.fitAll(), 150);
+  }
 });
